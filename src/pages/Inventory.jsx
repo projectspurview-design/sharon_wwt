@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { parseCSV, getRowDate } from '../utils/excelUtils';
 
 const SHEET_ID = "12AfHsnz0Oum0AiXto6KNdAaAvzuZbLGv";
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
 
 const C = {
   bg: '#f3f6fb',
@@ -342,13 +343,42 @@ export default function Inventory() {
 
         <div
           style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 12,
+          }}
+        >
+          <button
+            onClick={() => window.open(SHEET_URL, '_blank', 'noopener,noreferrer')}
+            style={{
+              padding: '10px 18px',
+              background: C.green,
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontWeight: 700,
+            }}
+          >
+            Open Excel Sheet
+          </button>
+        </div>
+
+        <div
+          style={{
             background: C.surface,
             border: `1px solid ${C.line}`,
             borderRadius: 16,
             overflow: 'hidden',
           }}
         >
-          <div style={{ overflowX: 'auto' }}>
+          <div
+            style={{
+              overflowX: 'auto',
+              overflowY: 'auto',
+              maxHeight: '600px',
+            }}
+          >
             <table
               style={{
                 width: '100%',
@@ -362,7 +392,8 @@ export default function Inventory() {
                   position: 'sticky',
                   top: 0,
                   background: '#f8fafc',
-                  zIndex: 1,
+                  zIndex: 5,
+                  boxShadow: `0 1px 0 ${C.line}`,
                 }}
               >
                 <tr>
@@ -378,6 +409,7 @@ export default function Inventory() {
                         textTransform: 'uppercase',
                         letterSpacing: 0.4,
                         whiteSpace: 'nowrap',
+                        background: '#f8fafc',
                       }}
                     >
                       {normalizeHeaderName(header)}
