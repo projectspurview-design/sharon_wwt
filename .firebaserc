@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "data-infra-799d"
+  },
+  "targets": {
+    "data-infra-799d": {
+      "hosting": {
+        "testing": [
+          "datacenter-infra-managment"
+        ],
+        "client": [
+          "data-infra-799d"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
