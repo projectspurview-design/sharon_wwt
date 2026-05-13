@@ -174,7 +174,7 @@ export default function Inventory() {
       <div
         style={{
           background: C.bg,
-          minHeight: '100vh',
+          height: '100vh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -189,7 +189,7 @@ export default function Inventory() {
 
   if (error) {
     return (
-      <div style={{ background: C.bg, minHeight: '100vh', padding: 40 }}>
+      <div style={{ background: C.bg, height: '100vh', padding: 40 }}>
         <div
           style={{
             background: C.surface,
@@ -207,14 +207,40 @@ export default function Inventory() {
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1600px', margin: '0 auto', padding: 24 }}>
+    // Fixed fullscreen container - NO PAGE SCROLL
+    <div 
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: C.bg,
+        overflow: 'hidden',
+        paddingTop: '80px', // Space for navbar
+        boxSizing: 'border-box'
+      }}
+    >
+      <div 
+        style={{ 
+          height: '100%',
+          maxWidth: '1600px', 
+          margin: '0 auto', 
+          padding: '0 24px 24px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          boxSizing: 'border-box'
+        }}
+      >
+        {/* Header - Compact */}
         <div
           style={{
+            flexShrink: 0,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: 24,
+            marginBottom: 16,
             gap: 16,
             flexWrap: 'wrap',
           }}
@@ -223,15 +249,14 @@ export default function Inventory() {
             <h1
               style={{
                 margin: 0,
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: 800,
                 color: C.navy,
               }}
             >
               Inventory Table
             </h1>
-
-            <p style={{ margin: '6px 0 0', color: C.muted }}>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: C.muted }}>
               Complete asset inventory from Google Sheet
             </p>
           </div>
@@ -239,29 +264,32 @@ export default function Inventory() {
           <button
             onClick={fetchData}
             style={{
-              padding: '10px 20px',
+              padding: '8px 16px',
               background: C.navy,
               color: '#fff',
               border: 'none',
               borderRadius: 8,
               cursor: 'pointer',
               fontWeight: 700,
+              fontSize: 13,
             }}
           >
             Refresh
           </button>
         </div>
 
+        {/* Filters - Compact */}
         <div
           style={{
+            flexShrink: 0,
             background: C.surface,
             border: `1px solid ${C.line}`,
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 24,
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 12,
             display: 'flex',
             alignItems: 'center',
-            gap: 16,
+            gap: 12,
             flexWrap: 'wrap',
           }}
         >
@@ -271,15 +299,16 @@ export default function Inventory() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
-              padding: '10px 16px',
-              width: 320,
+              padding: '8px 12px',
+              width: 280,
+              fontSize: 13,
               border: `1px solid ${C.line}`,
-              borderRadius: 10,
+              borderRadius: 8,
               outline: 'none',
             }}
           />
 
-          <span style={{ color: C.muted, fontWeight: 600 }}>
+          <span style={{ color: C.muted, fontWeight: 600, fontSize: 12 }}>
             Scan Date:
           </span>
 
@@ -289,13 +318,14 @@ export default function Inventory() {
             onChange={(e) => setDateFrom(e.target.value)}
             min={allDates[0]}
             style={{
-              padding: '9px 12px',
+              padding: '7px 10px',
+              fontSize: 12,
               borderRadius: 8,
               border: `1px solid ${C.line}`,
             }}
           />
 
-          <span style={{ color: C.muted }}>to</span>
+          <span style={{ color: C.muted, fontSize: 12 }}>to</span>
 
           <input
             type="date"
@@ -303,7 +333,8 @@ export default function Inventory() {
             onChange={(e) => setDateTo(e.target.value)}
             max={allDates[allDates.length - 1]}
             style={{
-              padding: '9px 12px',
+              padding: '7px 10px',
+              fontSize: 12,
               borderRadius: 8,
               border: `1px solid ${C.line}`,
             }}
@@ -317,13 +348,14 @@ export default function Inventory() {
                 setDateTo('');
               }}
               style={{
+                fontSize: 12,
                 color: C.red,
                 background: '#fff',
                 border: `1px solid ${C.line}`,
-                padding: '9px 14px',
+                padding: '7px 12px',
                 borderRadius: 8,
                 cursor: 'pointer',
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               Clear
@@ -334,15 +366,18 @@ export default function Inventory() {
             style={{
               marginLeft: 'auto',
               color: C.muted,
-              fontWeight: 700,
+              fontWeight: 600,
+              fontSize: 12,
             }}
           >
-            Showing {paginatedRows.length} of {filteredData.length} records
+            {filteredData.length} total records
           </div>
         </div>
 
+        {/* Excel Button - Compact */}
         <div
           style={{
+            flexShrink: 0,
             display: 'flex',
             justifyContent: 'flex-end',
             marginBottom: 12,
@@ -351,40 +386,47 @@ export default function Inventory() {
           <button
             onClick={() => window.open(SHEET_URL, '_blank', 'noopener,noreferrer')}
             style={{
-              padding: '10px 18px',
+              padding: '8px 16px',
               background: C.green,
               color: '#fff',
               border: 'none',
               borderRadius: 8,
               cursor: 'pointer',
               fontWeight: 700,
+              fontSize: 13,
             }}
           >
             Open Excel Sheet
           </button>
         </div>
 
+        {/* Table Container - Takes remaining space, ONLY table scrolls */}
         <div
           style={{
+            flex: 1,
             background: C.surface,
             border: `1px solid ${C.line}`,
-            borderRadius: 16,
+            borderRadius: 12,
+            display: 'flex',
+            flexDirection: 'column',
             overflow: 'hidden',
+            minHeight: 0, // Important for flex child scrolling
           }}
         >
+          {/* Scrollable table area */}
           <div
             style={{
-              overflowX: 'auto',
-              overflowY: 'auto',
-              maxHeight: '600px',
+              flex: 1,
+              overflow: 'auto', // ONLY scrollbar here - for both X and Y
+              minHeight: 0,
             }}
           >
             <table
               style={{
                 width: '100%',
                 borderCollapse: 'collapse',
-                fontSize: 14,
-                minWidth: 1000,
+                fontSize: 13,
+                minWidth: 900,
               }}
             >
               <thead
@@ -393,7 +435,6 @@ export default function Inventory() {
                   top: 0,
                   background: '#f8fafc',
                   zIndex: 5,
-                  boxShadow: `0 1px 0 ${C.line}`,
                 }}
               >
                 <tr>
@@ -401,11 +442,11 @@ export default function Inventory() {
                     <th
                       key={header}
                       style={{
-                        padding: '14px 16px',
+                        padding: '10px 12px',
                         textAlign: 'left',
                         color: C.navy,
                         borderBottom: `1px solid ${C.line}`,
-                        fontSize: 12,
+                        fontSize: 11,
                         textTransform: 'uppercase',
                         letterSpacing: 0.4,
                         whiteSpace: 'nowrap',
@@ -437,7 +478,7 @@ export default function Inventory() {
                     <tr
                       key={rowIndex}
                       style={{
-                        borderBottom: `1px solid ${C.line}`,
+                        borderBottom: rowIndex !== paginatedRows.length - 1 ? `1px solid ${C.line}` : 'none',
                         background: rowIndex % 2 === 0 ? '#fff' : '#f8fafc',
                       }}
                     >
@@ -457,7 +498,7 @@ export default function Inventory() {
                           <td
                             key={header}
                             style={{
-                              padding: '13px 16px',
+                              padding: '10px 12px',
                               color: isStatusColumn
                                 ? getStatusColor(value)
                                 : C.text,
@@ -476,18 +517,20 @@ export default function Inventory() {
             </table>
           </div>
 
+          {/* Pagination - Sticky at bottom */}
           <div
             style={{
-              padding: 16,
+              flexShrink: 0,
+              padding: '10px 16px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               borderTop: `1px solid ${C.line}`,
-              flexWrap: 'wrap',
+              background: C.surface,
               gap: 12,
             }}
           >
-            <div style={{ color: C.muted, fontWeight: 600 }}>
+            <div style={{ color: C.muted, fontWeight: 600, fontSize: 12 }}>
               Page {page} of {totalPages}
             </div>
 
@@ -496,13 +539,14 @@ export default function Inventory() {
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 style={{
-                  padding: '8px 14px',
-                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  borderRadius: 6,
                   border: `1px solid ${C.line}`,
                   background: page === 1 ? '#f1f5f9' : '#fff',
                   color: page === 1 ? C.muted : C.navy,
                   cursor: page === 1 ? 'not-allowed' : 'pointer',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
               >
                 Previous
@@ -512,13 +556,14 @@ export default function Inventory() {
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 style={{
-                  padding: '8px 14px',
-                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  borderRadius: 6,
                   border: `1px solid ${C.line}`,
                   background: page === totalPages ? '#f1f5f9' : C.navy,
                   color: page === totalPages ? C.muted : '#fff',
                   cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
               >
                 Next
