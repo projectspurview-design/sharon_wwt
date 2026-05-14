@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { parseCSV, getRowDate } from '../utils/excelUtils';
 
-const SHEET_ID = "12AfHsnz0Oum0AiXto6KNdAaAvzuZbLGv";
+const SHEET_ID = "1WvfO6YtmzIwf4XVEjLI-3Xu38WM_xWgapCWGtAtIxbo";
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
 
 const C = {
@@ -49,6 +49,87 @@ function normalizeHeaderName(header) {
     .replace(/_/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function isImageUrl(value) {
+  if (!value) return false;
+  const str = String(value).toLowerCase().trim();
+  return (
+    str.startsWith('http://') ||
+    str.startsWith('https://') ||
+    str.startsWith('data:image/')
+  );
+}
+
+/**
+ * Extract Google Drive file ID from various URL formats
+ */
+function extractGoogleDriveFileId(url) {
+  if (!url) return null;
+  const str = String(url).trim();
+  
+  // Pattern 1: /file/d/FILE_ID/view
+  const shareMatch = str.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+  if (shareMatch) return shareMatch[1];
+  
+  // Pattern 2: id=FILE_ID in query params
+  const idMatch = str.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  if (idMatch) return idMatch[1];
+  
+  // Pattern 3: /d/FILE_ID/
+  const docMatch = str.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  if (docMatch) return docMatch[1];
+  
+  // Pattern 4: Extract any 25+ character alphanumeric string that looks like a Drive ID
+  const genericMatch = str.match(/([a-zA-Z0-9-_]{25,})/);
+  if (genericMatch) return genericMatch[1];
+  
+  return null;
+}
+
+/**
+ * Get Google Drive view URL
+ */
+function getGoogleDriveViewUrl(url) {
+  const fileId = extractGoogleDriveFileId(url);
+  if (fileId) {
+    return `https://drive.google.com/file/d/${fileId}/view`;
+  }
+  return url;
+}
+
+function ImagePreviewCell({ value, headerName }) {
+  const viewUrl = getGoogleDriveViewUrl(value);
+  const fileId = extractGoogleDriveFileId(value);
+  
+  if (!isImageUrl(value)) {
+    return value ? <>{value}</> : <>—</>;
+  }
+
+  // Directly open in new tab when clicked
+  const handleViewImage = () => {
+    window.open(viewUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <button
+      onClick={handleViewImage}
+      style={{
+        background: C.blue,
+        color: '#fff',
+        border: 'none',
+        borderRadius: 4,
+        padding: '4px 8px',
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: 'pointer',
+        display: 'inline-block',
+      }}
+      title={fileId ? `Open image: ${fileId}` : 'Open image'}
+    >
+      View Image
+    </button>
+  );
 }
 
 export default function Inventory() {
@@ -207,7 +288,6 @@ export default function Inventory() {
   }
 
   return (
-    // Fixed fullscreen container - NO PAGE SCROLL
     <div 
       style={{ 
         position: 'fixed',
@@ -217,7 +297,7 @@ export default function Inventory() {
         bottom: 0,
         background: C.bg,
         overflow: 'hidden',
-        paddingTop: '80px', // Space for navbar
+        paddingTop: '80px',
         boxSizing: 'border-box'
       }}
     >
@@ -233,7 +313,7 @@ export default function Inventory() {
           boxSizing: 'border-box'
         }}
       >
-        {/* Header - Compact */}
+        {/* Header */}
         <div
           style={{
             flexShrink: 0,
@@ -278,7 +358,7 @@ export default function Inventory() {
           </button>
         </div>
 
-        {/* Filters - Compact */}
+        {/* Filters */}
         <div
           style={{
             flexShrink: 0,
@@ -374,7 +454,7 @@ export default function Inventory() {
           </div>
         </div>
 
-        {/* Excel Button - Compact */}
+        {/* Excel Button */}
         <div
           style={{
             flexShrink: 0,
@@ -396,11 +476,11 @@ export default function Inventory() {
               fontSize: 13,
             }}
           >
-            Open Excel Sheet
+            Open Google Sheet
           </button>
         </div>
 
-        {/* Table Container - Takes remaining space, ONLY table scrolls */}
+        {/* Table Container */}
         <div
           style={{
             flex: 1,
@@ -410,14 +490,14 @@ export default function Inventory() {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            minHeight: 0, // Important for flex child scrolling
+            minHeight: 0,
           }}
         >
-          {/* Scrollable table area */}
+          {/* Scrollable Table */}
           <div
             style={{
               flex: 1,
-              overflow: 'auto', // ONLY scrollbar here - for both X and Y
+              overflow: 'auto',
               minHeight: 0,
             }}
           >
@@ -494,6 +574,13 @@ export default function Inventory() {
                           headerName.includes('rail') ||
                           headerName.includes('power');
 
+                        const isImageColumn =
+                          headerName.includes('image') ||
+                          headerName.includes('photo') ||
+                          headerName.includes('picture') ||
+                          headerName.includes('path') ||
+                          headerName.includes('img');
+
                         return (
                           <td
                             key={header}
@@ -503,10 +590,14 @@ export default function Inventory() {
                                 ? getStatusColor(value)
                                 : C.text,
                               fontWeight: isStatusColumn ? 700 : 500,
-                              whiteSpace: 'nowrap',
+                              whiteSpace: isImageColumn ? 'normal' : 'nowrap',
                             }}
                           >
-                            {value || '—'}
+                            {isImageColumn ? (
+                              <ImagePreviewCell value={value} headerName={header} />
+                            ) : (
+                              value || '—'
+                            )}
                           </td>
                         );
                       })}
@@ -517,7 +608,7 @@ export default function Inventory() {
             </table>
           </div>
 
-          {/* Pagination - Sticky at bottom */}
+          {/* Pagination */}
           <div
             style={{
               flexShrink: 0,
