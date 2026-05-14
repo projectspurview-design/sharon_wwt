@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { parseCSV, computeStats, buildTechActivity, getRowDate, pct } from '../utils/excelUtils';
 
-const SHEET_ID = '12AfHsnz0Oum0AiXto6KNdAaAvzuZbLGv';
+const SHEET_ID = '1WvfO6YtmzIwf4XVEjLI-3Xu38WM_xWgapCWGtAtIxbo';
 
 const C = {
   bg: '#f8fafc', surface: '#ffffff', navy: '#0f172a', text: '#0f172a',
