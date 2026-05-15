@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { parseCSV, getRowDate } from '../utils/excelUtils';
 
 const SHEET_ID = "1WvfO6YtmzIwf4XVEjLI-3Xu38WM_xWgapCWGtAtIxbo";
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
 
 const C = {
   bg: '#f3f6fb',
@@ -48,6 +49,87 @@ function normalizeHeaderName(header) {
     .replace(/_/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function isImageUrl(value) {
+  if (!value) return false;
+  const str = String(value).toLowerCase().trim();
+  return (
+    str.startsWith('http://') ||
+    str.startsWith('https://') ||
+    str.startsWith('data:image/')
+  );
+}
+
+/**
+ * Extract Google Drive file ID from various URL formats
+ */
+function extractGoogleDriveFileId(url) {
+  if (!url) return null;
+  const str = String(url).trim();
+  
+  // Pattern 1: /file/d/FILE_ID/view
+  const shareMatch = str.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+  if (shareMatch) return shareMatch[1];
+  
+  // Pattern 2: id=FILE_ID in query params
+  const idMatch = str.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  if (idMatch) return idMatch[1];
+  
+  // Pattern 3: /d/FILE_ID/
+  const docMatch = str.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  if (docMatch) return docMatch[1];
+  
+  // Pattern 4: Extract any 25+ character alphanumeric string that looks like a Drive ID
+  const genericMatch = str.match(/([a-zA-Z0-9-_]{25,})/);
+  if (genericMatch) return genericMatch[1];
+  
+  return null;
+}
+
+/**
+ * Get Google Drive view URL
+ */
+function getGoogleDriveViewUrl(url) {
+  const fileId = extractGoogleDriveFileId(url);
+  if (fileId) {
+    return `https://drive.google.com/file/d/${fileId}/view`;
+  }
+  return url;
+}
+
+function ImagePreviewCell({ value, headerName }) {
+  const viewUrl = getGoogleDriveViewUrl(value);
+  const fileId = extractGoogleDriveFileId(value);
+  
+  if (!isImageUrl(value)) {
+    return value ? <>{value}</> : <>—</>;
+  }
+
+  // Directly open in new tab when clicked
+  const handleViewImage = () => {
+    window.open(viewUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <button
+      onClick={handleViewImage}
+      style={{
+        background: C.blue,
+        color: '#fff',
+        border: 'none',
+        borderRadius: 4,
+        padding: '4px 8px',
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: 'pointer',
+        display: 'inline-block',
+      }}
+      title={fileId ? `Open image: ${fileId}` : 'Open image'}
+    >
+      View Image
+    </button>
+  );
 }
 
 export default function Inventory() {
@@ -174,14 +256,11 @@ export default function Inventory() {
         style={{
           background: C.bg,
           height: '100vh',
-          width: '100vw',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: C.navy,
           fontWeight: 700,
-          position: 'fixed',
-          top: 0, left: 0
         }}
       >
         Loading Inventory...
@@ -191,7 +270,7 @@ export default function Inventory() {
 
   if (error) {
     return (
-      <div style={{ background: C.bg, height: '100vh', width: '100vw', position: 'fixed', top:0, left:0, padding: 40, overflow: 'auto' }}>
+      <div style={{ background: C.bg, height: '100vh', padding: 40 }}>
         <div
           style={{
             background: C.surface,
@@ -209,86 +288,88 @@ export default function Inventory() {
   }
 
   return (
-    // ROOT: Fixed Full Screen with Top Padding for Navbar
     <div 
       style={{ 
         position: 'fixed',
-        inset: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         background: C.bg,
         overflow: 'hidden',
-        // ADDED: Padding to clear the top navbar (approx 80px)
-        paddingTop: '80px', 
+        paddingTop: '80px',
         boxSizing: 'border-box'
       }}
     >
-      {/* CONTAINER: Fills remaining space (100vh - 80px) */}
       <div 
         style={{ 
-          width: '100%',
-          maxWidth: '1600px',
-          // Fills the available height inside the padded root
-          height: '100%', 
-          padding: '0 24px 24px 24px', // Removed top padding here to utilize root padding
-          boxSizing: 'border-box',
-          
+          height: '100%',
+          maxWidth: '1600px', 
+          margin: '0 auto', 
+          padding: '0 24px 24px 24px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 20,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          boxSizing: 'border-box'
         }}
       >
-        
-        {/* 1. HEADER */}
+        {/* Header */}
         <div
           style={{
-            flex: '0 0 auto',
+            flexShrink: 0,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            marginBottom: 16,
+            gap: 16,
+            flexWrap: 'wrap',
           }}
         >
           <div>
             <h1
               style={{
                 margin: 0,
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: 800,
                 color: C.navy,
               }}
             >
               Inventory Table
             </h1>
-            <p style={{ margin: '6px 0 0', color: C.muted }}>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: C.muted }}>
               Complete asset inventory from Google Sheet
             </p>
           </div>
+
           <button
             onClick={fetchData}
             style={{
-              padding: '10px 20px',
+              padding: '8px 16px',
               background: C.navy,
               color: '#fff',
               border: 'none',
               borderRadius: 8,
               cursor: 'pointer',
               fontWeight: 700,
+              fontSize: 13,
             }}
           >
             Refresh
           </button>
         </div>
 
-        {/* 2. FILTERS */}
+        {/* Filters */}
         <div
           style={{
-            flex: '0 0 auto',
+            flexShrink: 0,
             background: C.surface,
             border: `1px solid ${C.line}`,
-            borderRadius: 16,
-            padding: 20,
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 12,
             display: 'flex',
             alignItems: 'center',
-            gap: 16,
+            gap: 12,
             flexWrap: 'wrap',
           }}
         >
@@ -298,39 +379,47 @@ export default function Inventory() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
-              padding: '10px 16px',
-              width: 320,
+              padding: '8px 12px',
+              width: 280,
+              fontSize: 13,
               border: `1px solid ${C.line}`,
-              borderRadius: 10,
+              borderRadius: 8,
               outline: 'none',
             }}
           />
-          <span style={{ color: C.muted, fontWeight: 600 }}>
+
+          <span style={{ color: C.muted, fontWeight: 600, fontSize: 12 }}>
             Scan Date:
           </span>
+
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             min={allDates[0]}
             style={{
-              padding: '9px 12px',
+              padding: '7px 10px',
+              fontSize: 12,
               borderRadius: 8,
               border: `1px solid ${C.line}`,
             }}
           />
-          <span style={{ color: C.muted }}>to</span>
+
+          <span style={{ color: C.muted, fontSize: 12 }}>to</span>
+
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             max={allDates[allDates.length - 1]}
             style={{
-              padding: '9px 12px',
+              padding: '7px 10px',
+              fontSize: 12,
               borderRadius: 8,
               border: `1px solid ${C.line}`,
             }}
           />
+
           {(searchTerm || dateFrom || dateTo) && (
             <button
               onClick={() => {
@@ -339,49 +428,85 @@ export default function Inventory() {
                 setDateTo('');
               }}
               style={{
+                fontSize: 12,
                 color: C.red,
                 background: '#fff',
                 border: `1px solid ${C.line}`,
-                padding: '9px 14px',
+                padding: '7px 12px',
                 borderRadius: 8,
                 cursor: 'pointer',
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
               Clear
             </button>
           )}
+
           <div
             style={{
               marginLeft: 'auto',
               color: C.muted,
-              fontWeight: 700,
+              fontWeight: 600,
+              fontSize: 12,
             }}
           >
-            Showing {paginatedRows.length} of {filteredData.length} records
+            {filteredData.length} total records
           </div>
         </div>
 
-        {/* 3. TABLE CARD: Fills remaining height */}
+        {/* Excel Button */}
+        <div
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 12,
+          }}
+        >
+          <button
+            onClick={() => window.open(SHEET_URL, '_blank', 'noopener,noreferrer')}
+            style={{
+              padding: '8px 16px',
+              background: C.green,
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: 13,
+            }}
+          >
+            Open Google Sheet
+          </button>
+        </div>
+
+        {/* Table Container */}
         <div
           style={{
             flex: 1,
             background: C.surface,
             border: `1px solid ${C.line}`,
-            borderRadius: 16,
+            borderRadius: 12,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            minHeight: 0, 
+            minHeight: 0,
           }}
         >
-          <div style={{ overflow: 'auto', flex: 1 }}>
+          {/* Scrollable Table */}
+          <div
+            style={{
+              flex: 1,
+              overflow: 'auto',
+              minHeight: 0,
+            }}
+          >
             <table
               style={{
                 width: '100%',
                 borderCollapse: 'collapse',
-                fontSize: 14,
-                minWidth: 1000,
+                fontSize: 13,
+                minWidth: 900,
               }}
             >
               <thead
@@ -389,7 +514,7 @@ export default function Inventory() {
                   position: 'sticky',
                   top: 0,
                   background: '#f8fafc',
-                  zIndex: 1,
+                  zIndex: 5,
                 }}
               >
                 <tr>
@@ -397,14 +522,15 @@ export default function Inventory() {
                     <th
                       key={header}
                       style={{
-                        padding: '14px 16px',
+                        padding: '10px 12px',
                         textAlign: 'left',
                         color: C.navy,
                         borderBottom: `1px solid ${C.line}`,
-                        fontSize: 12,
+                        fontSize: 11,
                         textTransform: 'uppercase',
                         letterSpacing: 0.4,
                         whiteSpace: 'nowrap',
+                        background: '#f8fafc',
                       }}
                     >
                       {normalizeHeaderName(header)}
@@ -412,6 +538,7 @@ export default function Inventory() {
                   ))}
                 </tr>
               </thead>
+
               <tbody>
                 {paginatedRows.length === 0 ? (
                   <tr>
@@ -431,13 +558,14 @@ export default function Inventory() {
                     <tr
                       key={rowIndex}
                       style={{
-                        borderBottom: `1px solid ${C.line}`,
+                        borderBottom: rowIndex !== paginatedRows.length - 1 ? `1px solid ${C.line}` : 'none',
                         background: rowIndex % 2 === 0 ? '#fff' : '#f8fafc',
                       }}
                     >
                       {visibleHeaders.map((header) => {
                         const value = row[header] || '';
                         const headerName = String(header).toLowerCase();
+
                         const isStatusColumn =
                           headerName.includes('status') ||
                           headerName.includes('condition') ||
@@ -446,19 +574,30 @@ export default function Inventory() {
                           headerName.includes('rail') ||
                           headerName.includes('power');
 
+                        const isImageColumn =
+                          headerName.includes('image') ||
+                          headerName.includes('photo') ||
+                          headerName.includes('picture') ||
+                          headerName.includes('path') ||
+                          headerName.includes('img');
+
                         return (
                           <td
                             key={header}
                             style={{
-                              padding: '13px 16px',
+                              padding: '10px 12px',
                               color: isStatusColumn
                                 ? getStatusColor(value)
                                 : C.text,
                               fontWeight: isStatusColumn ? 700 : 500,
-                              whiteSpace: 'nowrap',
+                              whiteSpace: isImageColumn ? 'normal' : 'nowrap',
                             }}
                           >
-                            {value || '—'}
+                            {isImageColumn ? (
+                              <ImagePreviewCell value={value} headerName={header} />
+                            ) : (
+                              value || '—'
+                            )}
                           </td>
                         );
                       })}
@@ -469,49 +608,53 @@ export default function Inventory() {
             </table>
           </div>
 
-          {/* FOOTER */}
+          {/* Pagination */}
           <div
             style={{
-              flex: '0 0 auto',
-              padding: 16,
+              flexShrink: 0,
+              padding: '10px 16px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               borderTop: `1px solid ${C.line}`,
-              flexWrap: 'wrap',
+              background: C.surface,
               gap: 12,
             }}
           >
-            <div style={{ color: C.muted, fontWeight: 600 }}>
+            <div style={{ color: C.muted, fontWeight: 600, fontSize: 12 }}>
               Page {page} of {totalPages}
             </div>
+
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 style={{
-                  padding: '8px 14px',
-                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  borderRadius: 6,
                   border: `1px solid ${C.line}`,
                   background: page === 1 ? '#f1f5f9' : '#fff',
                   color: page === 1 ? C.muted : C.navy,
                   cursor: page === 1 ? 'not-allowed' : 'pointer',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
               >
                 Previous
               </button>
+
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 style={{
-                  padding: '8px 14px',
-                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  borderRadius: 6,
                   border: `1px solid ${C.line}`,
                   background: page === totalPages ? '#f1f5f9' : C.navy,
                   color: page === totalPages ? C.muted : '#fff',
                   cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                  fontWeight: 700,
+                  fontWeight: 600,
                 }}
               >
                 Next
