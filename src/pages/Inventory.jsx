@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { parseCSV, getRowDate } from '../utils/excelUtils';
+import { LoadingSpinner } from '../App';
 
 const SHEET_ID = "1WvfO6YtmzIwf4XVEjLI-3Xu38WM_xWgapCWGtAtIxbo";
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
@@ -251,21 +252,7 @@ export default function Inventory() {
   }, [headers]);
 
   if (loading) {
-    return (
-      <div
-        style={{
-          background: C.bg,
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: C.navy,
-          fontWeight: 700,
-        }}
-      >
-        Loading Inventory...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

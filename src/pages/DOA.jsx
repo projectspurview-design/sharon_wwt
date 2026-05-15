@@ -1,6 +1,7 @@
 // src/pages/DOA.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { parseCSV, getRowDate, extractStatus } from '../utils/excelUtils';
+import { LoadingSpinner } from '../App';
 
 const SHEET_ID = '1y3VvRFSigDBo1Vkn8ijDJnEawBLCz9smlH1vvECzlJU';
 
@@ -102,14 +103,7 @@ export default function DOA() {
   const paginatedData = filteredData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   if (loading) {
-    return (
-      <div style={{
-        background: C.bg, height: '100vh', width: '100vw', position: 'fixed', inset: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, color: C.navy
-      }}>
-        Loading DOA Items...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
